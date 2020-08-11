@@ -1,9 +1,45 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_weather_icons/flutter_weather_icons.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:weather_app/helpers/screen_helper.dart';
 import 'package:weather_app/widgets/small_card.dart';
+import 'package:permission_handler/permission_handler.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+
+  bool locationPermission = false;
+  void getMyLocation()async{
+    if(await Permission.location.isGranted){
+      setState(() {
+        locationPermission = true;
+      });
+    }
+    if(locationPermission){
+      Position position = await Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      print('long : ${position.longitude}');
+      print('lati : ${position.latitude}');
+    }else{
+      await Permission.location.request();
+    }
+  }
+
+  @override
+  void initState() {
+    getMyLocation();
+    Timer.periodic(Duration(seconds: 3), (timer){
+      getMyLocation();
+      if(locationPermission){timer.cancel();}
+    } );
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -13,7 +49,7 @@ class HomeScreen extends StatelessWidget {
         height: MediaQuery.of(context).size.height,
         width: MediaQuery.of(context).size.width,
         margin: EdgeInsets.all(25),
-        child: Column(
+        child: locationPermission ? Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Expanded(
@@ -28,6 +64,9 @@ class HomeScreen extends StatelessWidget {
                   // ignore: deprecated_member_use
                   style: textTheme.subtitle,
                 ),
+                onTap: (){
+                  Navigator.pushNamed(context, 'fake');
+                },
               ),
             ),
             Center(
@@ -128,10 +167,13 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
           ],
-        ),
+        ) : Center(
+          child: Text('Please Give me GPS PERMISSION',style: textTheme.title.copyWith(fontSize: 70),),
+        )
       ),
     );
   }
+
   final List _fakeData = [
     [
       'THU',
