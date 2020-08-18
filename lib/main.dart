@@ -2,6 +2,7 @@ import 'package:device_preview/device_preview.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:weather_app/providers/fake_provider.dart';
+import 'package:weather_app/providers/weather_provider.dart';
 import 'package:weather_app/screens/fake_screen.dart';
 import 'package:weather_app/screens/home_screen.dart';
 
@@ -18,9 +19,8 @@ class EntryPoint extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (_)=> FakeProvider(),
-        )
+        ChangeNotifierProvider.value(value: FakeProvider(),),
+        ChangeNotifierProvider.value(value: WeatherProvider()),
       ],
       child: MaterialApp(
         theme: ThemeData(
