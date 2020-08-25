@@ -67,7 +67,6 @@ class WeatherProvider with ChangeNotifier {
     final response =await http.get(url);
     try{
       List decodedData = jsonDecode(response.body)['list'] as List;
-      print(jsonDecode(response.body)['city']['name']);
       return decodedData.sublist(1,7);
     }catch(e){
       print(e);
