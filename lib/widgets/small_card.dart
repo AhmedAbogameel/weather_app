@@ -6,7 +6,7 @@ class SmallCard extends StatelessWidget {
 
   final String day;
   final IconData weatherIcon;
-  final int temp;
+  final temp;
 
   @override
   Widget build(BuildContext context) {

@@ -34,6 +34,7 @@ class EntryPoint extends StatelessWidget {
         home: HomeScreen(),
         routes: {
           'fake':(_)=> FakeScreen(),
+          'home':(_)=> HomeScreen(),
         },
       ),
     );

@@ -1,12 +1,11 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_weather_icons/flutter_weather_icons.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:weather_app/helpers/screen_helper.dart';
 import 'package:weather_app/providers/weather_provider.dart';
 import 'package:weather_app/widgets/small_card.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -17,7 +16,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool locationPermission = true;
   double lat;
   double lon;
-  Future fetchRef;
+  Future fetchCurrent , fetchForecast;
   void getMyLocation() async {
     if(await Permission.location.isGranted){
       setState(() {
@@ -37,8 +36,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     getMyLocation();
-    Future.delayed(Duration.zero).then((_) => fetchRef =
-        Provider.of<WeatherProvider>(context,listen: false).fetchingWeather(lat, lon));
+    Future.delayed(Duration.zero).then((_) {fetchCurrent =
+        Provider.of<WeatherProvider>(context,listen: false).fetchingCurrentWeather(lat, lon);
+      fetchForecast = Provider.of<WeatherProvider>(context,listen: false).getForecast();
+    });
     super.initState();
   }
 
@@ -47,7 +48,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final theme = Theme.of(context);
     final textTheme = Theme.of(context).textTheme;
     final size = MediaQuery.of(context).size;
-    //var weatherProvider = Provider.of<WeatherProvider>(context);
     return Scaffold(
       body: Container(
           height: size.height,
@@ -55,25 +55,23 @@ class _HomeScreenState extends State<HomeScreen> {
           margin: EdgeInsets.all(25),
           child: locationPermission
               ? FutureBuilder(
-                  future: fetchRef,
-                  builder: (context, snapshot) => Column(
+                  future: fetchCurrent,
+                  builder: (context, snapshot) => snapshot.hasData ? Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Expanded(
                         child: ListTile(
                           title: Text(
-                            'New York',
+                            snapshot.data['city'],
                             // ignore: deprecated_member_use
                             style: textTheme.title,
                           ),
                           subtitle: Text(
-                            'Wed 4 Dec 2019',
+                            '${snapshot.data['now']}',
                             // ignore: deprecated_member_use
                             style: textTheme.subtitle,
                           ),
-                          onTap: () {
-                            Navigator.pushNamed(context, 'fake');
-                          },
+                          onTap: () {},
                         ),
                       ),
                       Center(
@@ -98,15 +96,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                     width: 15,
                                   ),
                                   Text(
-                                    '38°',
+                                    '${snapshot.data['temp']}°',
                                     // ignore: deprecated_member_use
                                     style:
-                                        textTheme.title.copyWith(fontSize: 100),
+                                    textTheme.title.copyWith(fontSize: 100),
                                   ),
                                 ],
                               ),
                               Text(
-                                'Partly Cloudy',
+                                snapshot.data['description'],
                                 // ignore: deprecated_member_use
                                 style: textTheme.subtitle,
                               ),
@@ -121,7 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             Expanded(
                               child: ListTile(
                                 title: Text(
-                                  '11km/h',
+                                  '${snapshot.data['windSpeed']}km/h',
                                   // ignore: deprecated_member_use
                                   style: textTheme.title,
                                 ),
@@ -135,7 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             Expanded(
                               child: ListTile(
                                 title: Text(
-                                  '78%',
+                                  '${snapshot.data['humidity']}%',
                                   // ignore: deprecated_member_use
                                   style: textTheme.title,
                                 ),
@@ -163,18 +161,23 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                       ),
-                      Expanded(
-                        child: ListView.builder(
-                          itemCount: _fakeData.length,
-                          scrollDirection: Axis.horizontal,
-                          itemBuilder: (_, index) => SmallCard(
-                            day: _fakeData[index][0],
-                            temp: _fakeData[index][2],
-                            weatherIcon: _fakeData[index][1],
+                      FutureBuilder<List>(
+                        future: fetchForecast,
+                        builder: (_,snapshot)=> snapshot.hasData ? Expanded(
+                          child: ListView.builder(
+                            itemCount: snapshot.data.length,
+                            scrollDirection: Axis.horizontal,
+                            itemBuilder: (_, index) => SmallCard(
+                              day: _fakeData[index][0],
+                              temp: (snapshot.data[index]['temp']['day'] - 273.15).toString().substring(0,2),
+                              weatherIcon: _fakeData[index][1],
+                            ),
                           ),
-                        ),
+                        ) : Container(),
                       ),
                     ],
+                  ) : Center(
+                    child: CircularProgressIndicator(),
                   ),
                 )
               : Center(
@@ -209,6 +212,11 @@ class _HomeScreenState extends State<HomeScreen> {
     ],
     [
       'TUE',
+      WeatherIcons.wiTsunami,
+      18,
+    ],
+    [
+      'WED',
       WeatherIcons.wiTsunami,
       18,
     ]
